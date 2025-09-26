@@ -1,6 +1,6 @@
 // Spotify App ayarları - BUNLARI DEĞİŞTİRMENİZ GEREKİYOR
         const client_id = "4f9325f881bf4c1e92b9e41c7fadc4ef";
-        const redirect_uri = "https://ardac334-hash.github.io/spotideneme/";
+        const redirect_uri = "https://ardac334-hash.github.io/spotideneme/index.html";
         const scopes = "user-top-read user-read-recently-played user-read-email";
 
         let accessToken = null;
