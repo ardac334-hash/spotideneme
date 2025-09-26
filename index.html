@@ -1,46 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <title>spotify</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Müzik Analizim</title>
+   
 </head>
 <body>
-  <h1>spoti</h1>
-  <button id="login">Spotify ile Giriş Yap</button>
-  <div id="results"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Spotify Analizim</h1>
+            <p>Müzik zevkini keşfet ve en sevdiğin şarkıları analiz et</p>
+        </div>
 
-  <script>
-    const client_id = "4f9325f881bf4c1e92b9e41c7fadc4ef"; // senin Client ID
-    const redirect_uri = "https://ardac334-hash.github.io/spotideneme/"; 
-    const scopes = "user-top-read";
+        <div class="login-section">
+            <button id="login">🎧 Spotify ile Giriş Yap</button>
+        </div>
 
-    // Giriş butonu
-    document.getElementById("login").onclick = () => {
-      window.location = `https://accounts.spotify.com/authorize?client_id=${client_id}&response_type=token&redirect_uri=${redirect_uri}&scope=${scopes}`;
-    }
+        <div id="user-info" class="user-info">
+            <h3>Hoş geldin, <span id="user-name"></span>!</h3>
+            <p>Spotify hesabın: <span id="user-email"></span></p>
+        </div>
 
-    // URL’den token al
-    const hash = window.location.hash.substring(1).split("&").reduce((res, item) => {
-      let parts = item.split("=");
-      res[parts[0]] = parts[1];
-      return res;
-    }, {});
+        <div class="tabs" id="tabs" style="display: none;">
+            <button class="tab active" data-section="top-tracks">🎵 En Çok Dinlenen Şarkılar</button>
+            <button class="tab" data-section="top-artists">🎤 En Sevilen Sanatçılar</button>
+            <button class="tab" data-section="recent-tracks">🕒 Son Dinlenenler</button>
+            <button class="tab" data-section="stats">📊 İstatistikler</button>
+        </div>
 
-    const access_token = hash.access_token;
+        <div id="top-tracks" class="content-section active">
+            <h2 class="section-title">En Çok Dinlenen Şarkılarım</h2>
+            <div id="tracks-content">
+                <p class="loading">Şarkılar yükleniyor...</p>
+            </div>
+        </div>
 
-    if(access_token){
-      fetch("https://api.spotify.com/v1/me/top/tracks?limit=10", {
-        headers: { "Authorization": "Bearer " + access_token }
-      })
-      .then(res => res.json())
-      .then(data => {
-        let html = "<h2>En Çok Dinlenen Şarkılar</h2><ul>";
-        data.items.forEach(track => {
-          html += `<li>${track.name} - ${track.artists[0].name}</li>`;
-        });
-        html += "</ul>";
-        document.getElementById("results").innerHTML = html;
-      });
-    }
-  </script>
+        <div id="top-artists" class="content-section">
+            <h2 class="section-title">En Sevilen Sanatçılarım</h2>
+            <div id="artists-content">
+                <p class="loading">Sanatçılar yükleniyor...</p>
+            </div>
+        </div>
+
+        <div id="recent-tracks" class="content-section">
+            <h2 class="section-title">Son Dinlediğim Şarkılar</h2>
+            <div id="recent-content">
+                <p class="loading">Son dinlenenler yükleniyor...</p>
+            </div>
+        </div>
+
+        <div id="stats" class="content-section">
+            <h2 class="section-title">Müzik İstatistiklerim</h2>
+            <div class="stats-grid" id="stats-content">
+                <p class="loading">İstatistikler hesaplanıyor...</p>
+            </div>
+        </div>
+    </div>
+
+    
 </body>
 </html>
