@@ -1,4 +1,4 @@
-
+// Spotify App ayarları - BUNLARI DEĞİŞTİRMENİZ GEREKİYOR
         const client_id = "4f9325f881bf4c1e92b9e41c7fadc4ef";
         const redirect_uri = "https://ardac334-hash.github.io/spotideneme/";
         const scopes = "user-top-read user-read-recently-played user-read-email";
@@ -6,25 +6,76 @@
         let accessToken = null;
         let userData = {};
 
-        // Giriş butonu
-        document.getElementById("login").onclick = () => {
-            window.location = `https://accounts.spotify.com/authorize?client_id=${client_id}&response_type=token&redirect_uri=${redirect_uri}&scope=${scopes}`;
+        // Debug fonksiyonu
+        function debugLog(message) {
+            console.log(message);
+            const debugElement = document.getElementById("debug-content");
+            debugElement.innerHTML += "<br>" + new Date().toLocaleTimeString() + ": " + message;
         }
 
-        // URL'den token al
-        const hash = window.location.hash.substring(1).split("&").reduce((res, item) => {
-            let parts = item.split("=");
-            res[parts[0]] = parts[1];
-            return res;
-        }, {});
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog("DOM yüklendi");
+            
+            // Login butonu event listener'ı ekle
+            const loginButton = document.getElementById("login");
+            if (loginButton) {
+                debugLog("Login butonu bulundu");
+                loginButton.onclick = handleLogin;
+            } else {
+                debugLog("HATA: Login butonu bulunamadı!");
+            }
 
-        accessToken = hash.access_token;
+            // URL'den token kontrol et
+            checkForToken();
+        });
 
-        if (accessToken) {
-            initializeApp();
+        function handleLogin() {
+            debugLog("Login butonuna tıklandı");
+            
+            const authUrl = `https://accounts.spotify.com/authorize?client_id=${client_id}&response_type=token&redirect_uri=${encodeURIComponent(redirect_uri)}&scope=${encodeURIComponent(scopes)}`;
+            
+            debugLog("Yönlendirme URL'si: " + authUrl);
+            
+            try {
+                window.location.href = authUrl;
+            } catch (error) {
+                debugLog("HATA: Yönlendirme başarısız - " + error.message);
+            }
+        }
+
+        function checkForToken() {
+            debugLog("Token kontrol ediliyor...");
+            
+            // URL hash kontrolü
+            const hash = window.location.hash;
+            debugLog("URL Hash: " + hash);
+            
+            if (hash) {
+                const hashParams = hash.substring(1).split("&").reduce((res, item) => {
+                    let parts = item.split("=");
+                    res[parts[0]] = parts[1];
+                    return res;
+                }, {});
+                
+                debugLog("Hash parametreleri: " + JSON.stringify(hashParams));
+                
+                accessToken = hashParams.access_token;
+                
+                if (accessToken) {
+                    debugLog("Access token bulundu: " + accessToken.substring(0, 20) + "...");
+                    initializeApp();
+                } else {
+                    debugLog("Access token bulunamadı");
+                }
+            } else {
+                debugLog("URL'de hash bulunamadı");
+            }
         }
 
         async function initializeApp() {
+            debugLog("Uygulama başlatılıyor...");
+            
             try {
                 // Kullanıcı bilgilerini al
                 await fetchUserInfo();
@@ -40,75 +91,107 @@
                 // Tab event listeners
                 setupTabs();
                 
+                debugLog("Uygulama başarıyla başlatıldı");
+                
             } catch (error) {
-                showError("Spotify verileri yüklenirken bir hata oluştu.");
-                console.error(error);
+                debugLog("HATA: Uygulama başlatılamadı - " + error.message);
+                showError("Spotify verileri yüklenirken bir hata oluştu: " + error.message);
             }
         }
 
         async function fetchUserInfo() {
+            debugLog("Kullanıcı bilgileri alınıyor...");
+            
             const response = await fetch("https://api.spotify.com/v1/me", {
                 headers: { "Authorization": "Bearer " + accessToken }
             });
             
-            if (!response.ok) throw new Error("Kullanıcı bilgileri alınamadı");
+            debugLog("Kullanıcı API yanıt kodu: " + response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                debugLog("API Hatası: " + errorText);
+                throw new Error("Kullanıcı bilgileri alınamadı: " + response.status);
+            }
             
             const user = await response.json();
             userData = user;
+            
+            debugLog("Kullanıcı bilgileri alındı: " + user.display_name);
             
             document.getElementById("user-name").textContent = user.display_name || "Spotify Kullanıcısı";
             document.getElementById("user-email").textContent = user.email || "E-posta gizli";
         }
 
         async function fetchTopTracks() {
+            debugLog("En çok dinlenen şarkılar alınıyor...");
+            
             try {
                 const response = await fetch("https://api.spotify.com/v1/me/top/tracks?limit=20&time_range=medium_term", {
                     headers: { "Authorization": "Bearer " + accessToken }
                 });
                 
-                if (!response.ok) throw new Error("Şarkılar alınamadı");
+                debugLog("Şarkılar API yanıt kodu: " + response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    debugLog("Şarkılar API Hatası: " + errorText);
+                    throw new Error("Şarkılar alınamadı: " + response.status);
+                }
                 
                 const data = await response.json();
+                debugLog("Şarkı sayısı: " + data.items.length);
                 displayTracks(data.items, "tracks-content");
                 
             } catch (error) {
-                document.getElementById("tracks-content").innerHTML = '<p class="error">Şarkılar yüklenirken hata oluştu.</p>';
+                debugLog("Şarkı alma hatası: " + error.message);
+                document.getElementById("tracks-content").innerHTML = '<p class="error">Şarkılar yüklenirken hata oluştu: ' + error.message + '</p>';
             }
         }
 
         async function fetchTopArtists() {
+            debugLog("En sevilen sanatçılar alınıyor...");
+            
             try {
                 const response = await fetch("https://api.spotify.com/v1/me/top/artists?limit=20&time_range=medium_term", {
                     headers: { "Authorization": "Bearer " + accessToken }
                 });
                 
-                if (!response.ok) throw new Error("Sanatçılar alınamadı");
+                if (!response.ok) throw new Error("Sanatçılar alınamadı: " + response.status);
                 
                 const data = await response.json();
+                debugLog("Sanatçı sayısı: " + data.items.length);
                 displayArtists(data.items, "artists-content");
                 
             } catch (error) {
-                document.getElementById("artists-content").innerHTML = '<p class="error">Sanatçılar yüklenirken hata oluştu.</p>';
+                debugLog("Sanatçı alma hatası: " + error.message);
+                document.getElementById("artists-content").innerHTML = '<p class="error">Sanatçılar yüklenirken hata oluştu: ' + error.message + '</p>';
             }
         }
 
         async function fetchRecentTracks() {
+            debugLog("Son dinlenenler alınıyor...");
+            
             try {
                 const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=20", {
                     headers: { "Authorization": "Bearer " + accessToken }
                 });
                 
-                if (!response.ok) throw new Error("Son dinlenenler alınamadı");
+                if (!response.ok) throw new Error("Son dinlenenler alınamadı: " + response.status);
                 
                 const data = await response.json();
+                debugLog("Son dinlenen sayısı: " + data.items.length);
                 displayRecentTracks(data.items, "recent-content");
                 
             } catch (error) {
-                document.getElementById("recent-content").innerHTML = '<p class="error">Son dinlenenler yüklenirken hata oluştu.</p>';
+                debugLog("Son dinlenenler alma hatası: " + error.message);
+                document.getElementById("recent-content").innerHTML = '<p class="error">Son dinlenenler yüklenirken hata oluştu: ' + error.message + '</p>';
             }
         }
 
         async function fetchStats() {
+            debugLog("İstatistikler hesaplanıyor...");
+            
             try {
                 // Paralel olarak verileri al
                 const [tracksResponse, artistsResponse] = await Promise.all([
@@ -123,10 +206,12 @@
                 const tracks = await tracksResponse.json();
                 const artists = await artistsResponse.json();
                 
+                debugLog("İstatistik verileri alındı");
                 displayStats(tracks.items, artists.items);
                 
             } catch (error) {
-                document.getElementById("stats-content").innerHTML = '<p class="error">İstatistikler yüklenirken hata oluştu.</p>';
+                debugLog("İstatistik hatası: " + error.message);
+                document.getElementById("stats-content").innerHTML = '<p class="error">İstatistikler yüklenirken hata oluştu: ' + error.message + '</p>';
             }
         }
 
@@ -182,7 +267,9 @@
                 genreCount[genre] = (genreCount[genre] || 0) + 1;
             });
             
-            const topGenre = Object.keys(genreCount).reduce((a, b) => genreCount[a] > genreCount[b] ? a : b, "Bilinmiyor");
+            const topGenre = Object.keys(genreCount).length > 0 ? 
+                Object.keys(genreCount).reduce((a, b) => genreCount[a] > genreCount[b] ? a : b) : 
+                "Bilinmiyor";
             
             const html = `
                 <div class="stat-card">
@@ -244,6 +331,8 @@
         }
 
         function showError(message) {
-            document.getElementById("results").innerHTML = `<p class="error">${message}</p>`;
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.innerHTML = message;
+            document.querySelector('.container').appendChild(errorDiv);
         }
-    </script>
